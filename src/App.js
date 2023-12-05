@@ -17,7 +17,7 @@ function Arpeggiator() {
 
     document.getElementsByTagName("main")[0].focus()  // Focus after render to allow immediate acess for handleKeyDown
 
-    const synth = new Tone.Synth().toDestination()
+    const synth =  new Tone.PolySynth(Tone.Synth).toDestination()
   
     const pattern = new Tone.Pattern((time, note) => {
       synth.triggerAttackRelease(note, '8n', time)
@@ -33,8 +33,6 @@ function Arpeggiator() {
     // Tone.Transport.swing = 1 // Swing amount, range from 0 to 1
     // // Set the swing subdivision, typically '8n' for eighth-note swing
     // Tone.Transport.swingSubdivision = '8n'
-
-    // Right now the arp is playing notes in asc order but they're being displayed in the order they came
   
     return () => {
       pattern.dispose()
@@ -48,7 +46,9 @@ function Arpeggiator() {
     }
   }, [notes, pattern])
 
-  const startArpeggiator = () => {
+
+  const startArpeggiator = async () => {
+    await Tone.start() 
     Tone.Transport.start()
     pattern.start(0)
   }
@@ -74,7 +74,7 @@ function Arpeggiator() {
     const whiteKeys = ['C', 'D', 'E', 'F', 'G', 'A', 'B', 'C', 'D']
 
     return (
-      <div className="piano-roll">
+      <div className="keyboard">
         <div className="black-keys">
           {blackKeys.map((note, index) => (
             <PianoKey key={index} note={note} synth={synth} octave={(index > 4) ? octave + 1 : octave } className="black-key key" />
@@ -132,9 +132,7 @@ function Arpeggiator() {
     'k': 'C',
     'l': 'D',
     'o': 'C#',
-    'p': 'D#',
-    'ArrowUp': 'up',
-    'ArrowUp': 'down',
+    'p': 'D#'
   }
   
   return (
@@ -148,7 +146,6 @@ function Arpeggiator() {
           ))}
         </ol>
         <Piano synth={synth} octave={currentOctave} />
-        <button id="start" onClick={ async () => { await Tone.start() }}>Enable</button>
         <button onClick={startArpeggiator}>Start</button>
         <button onClick={stopArpeggiator}>Stop</button>
       </header>
