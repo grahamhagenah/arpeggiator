@@ -2,12 +2,13 @@ import * as Tone from 'tone'
 import './App.css'
 import { useState, useEffect } from 'react'
 
-function App() {
+function Arpeggiator() {
 
-  const synth =  new Tone.AMSynth().toDestination()
-  const [octave, setOctave] = useState(4)
+  const synth =  new Tone.PolySynth(Tone.Synth).toDestination()
+  const [octave, setOctave] = useState(5)
   const [notes, setNotes] = useState(['C4', 'E4', 'G4']) // Initial notes
-  const [pattern, setPattern] = useState(null);
+  const [pattern, setPattern] = useState(null)
+  const [patternIndex, setPatternIndex] = useState(0);
 
   // Capture state variables
   let currentOctave = octave
@@ -20,11 +21,20 @@ function App() {
   
     const pattern = new Tone.Pattern((time, note) => {
       synth.triggerAttackRelease(note, '8n', time)
+
+      setPatternIndex(prevIndex => (prevIndex + 1) % pattern.values.length)
+
     }, notes, 'up')
   
     setPattern(pattern)
 
-    pattern.interval = '16n'
+    pattern.interval = '4n'
+    // Set the swing amount
+    // Tone.Transport.swing = 1 // Swing amount, range from 0 to 1
+    // // Set the swing subdivision, typically '8n' for eighth-note swing
+    // Tone.Transport.swingSubdivision = '8n'
+
+    // Right now the arp is playing notes in asc order but they're being displayed in the order they came
   
     return () => {
       pattern.dispose()
@@ -49,10 +59,9 @@ function App() {
   }
 
   const addNote = (newNote) => {
-    console.log(notes)
     setNotes(prevNotes => {
       let updatedNotes = [...prevNotes, newNote];
-      // If the array length exceeds 4, remove the first element
+      // If the array length exceeds 3, remove the first element
       if (updatedNotes.length > 3) {
         updatedNotes.shift()
       }
@@ -88,15 +97,25 @@ function App() {
     ) 
   }
 
+  function handleSwingChange(newSwingValue) {
+    Tone.Transport.swing = newSwingValue;
+  }
+
   const handleKeyDown = (props) => {
+
     const note = noteMapping[props.key]
-    if(note) {
+
+    // Change octave with up or down arrow
+    if(['ArrowUp', 'ArrowDown'].includes(props.key)) {
+      (props.key === 'ArrowUp') ? setOctave(octave + 1) : setOctave(octave - 1)
+    }
+
+    else if(note) {
       // If following keys are played, move the octave up one
       addNote(note + (['k', 'l', 'o', 'p'].includes(props.key) ? currentOctave + 1 : currentOctave))
     }
   }
   
-
   const noteMapping = {
     'a': 'C',
     'w': 'C#',
@@ -113,18 +132,20 @@ function App() {
     'k': 'C',
     'l': 'D',
     'o': 'C#',
-    'p': 'D#'
+    'p': 'D#',
+    'ArrowUp': 'up',
+    'ArrowUp': 'down',
   }
   
   return (
     <main className="App" tabIndex="0" onKeyDown={handleKeyDown}>
       <header className="App-header">
         <ol>
-          {/* {pattern && (pattern.values).map((note, key) => (
-            <li key={key} className={(key === currentIndex) ? "currentKey" : "key"}>
+          {notes && (notes).map((note, key) => (
+            <li key={key} className={(key === patternIndex) ? "currentKey" : "key"}>
               <p>{note}</p>
             </li>
-          ))} */}
+          ))}
         </ol>
         <Piano synth={synth} octave={currentOctave} />
         <button id="start" onClick={ async () => { await Tone.start() }}>Enable</button>
@@ -135,4 +156,4 @@ function App() {
   )
 }
 
-export default App
+export default Arpeggiator
